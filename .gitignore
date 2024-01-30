@@ -36,4 +36,4 @@ override.tf.json
 # Ignore CLI configuration files
 .terraformrc
 
-**/cloud.yaml
+**/clouds.yml

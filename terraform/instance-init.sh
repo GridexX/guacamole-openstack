@@ -24,19 +24,20 @@ echo "✅ Guacamole builded"
 sudo systemctl daemon-reload
 sudo systemctl start guacd
 sudo systemctl enable guacd
-systemctl status guacd
+# systemctl status guacd
 
 # Comment out the IPv6 remote localhost listening
 # sed -i '/^::1/s/^/#/g' /etc/hosts
 sudo systemctl restart guacd
 
 # Install the GUI Client
+sudo mkdir -p /etc/guacamole/{extensions,lib}
 sudo curl -L -o /etc/guacamole/guacamole.war  https://downloads.apache.org/guacamole/$GUACAMOLE_VERSION/binary/guacamole-$GUACAMOLE_VERSION.war
 echo "✅ Guacamole GUI installed"
 # Configure Tomcat from the previous package sources and enable it
 sudo ln -s /etc/guacamole/guacamole.war /var/lib/tomcat9/webapps/
 echo "✅ Links created"
-sudo mkdir -p /etc/guacamole/{extensions,lib}
+
 echo "✅ Folders created"
 sudo su -c "echo 'GUACAMOLE_HOME=/etc/guacamole' >> /etc/default/tomcat9"
 sudo su -c "printf 'guacd-hostname: 127.0.0.1\nguacd-port: 4822\nuser-mapping:   /etc/guacamole/user-mapping.xml\nauth-provider:  net.sourceforge.guacamole.net.basic.BasicFileAuthenticationProvider\n' >> /etc/guacamole/guacamole.properties"
