@@ -19,3 +19,13 @@ variable "security_groups" {
 variable "public_network_name" {
   default = "public2"
 }
+
+variable "keycloak_hostname" {
+  type = string
+  description= "Keycloak hostname, e.g. keycloak.example.com"
+}
+
+variable "guacamole_hostname" {
+  type= string
+  description= "Guacamole hostname, e.g. guacamole.example.com"
+}

@@ -1,0 +1,124 @@
+version: "3.7"
+services:
+  caddy:
+    image: lucaslorentz/caddy-docker-proxy:ci-alpine
+    ports:
+      - 80:80
+      - 443:443
+    environment:
+      - CADDY_INGRESS_NETWORKS=caddy
+    networks:
+      - caddy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - caddy_data:/data
+    restart: unless-stopped
+
+  keycloak:
+    container_name: keycloak
+    image: quay.io/keycloak/keycloak:latest
+    restart: unless-stopped
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USER: keycloak
+      KC_DB_SCHEMA: public
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD}
+      KC_HOSTNAME: ${KC_HOSTNAME}
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_PROXY: edge
+    # ports:
+    # - 8080:8080
+    depends_on:
+      - keycloak-db
+    networks:
+      - keycloak-nw
+      - caddy
+    command: start
+    labels:
+      caddy: ${KC_HOSTNAME}
+      caddy.reverse_proxy: "{{upstreams 8080}}"
+
+  keycloak-db:
+    container_name: keycloak-db
+    image: postgres:latest
+    restart: unless-stopped
+    security_opt:
+      - label:disable
+    volumes:
+      - keycloack-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: ${KC_DB_PASSWORD}
+    #   ports:
+    # - 5432:5432
+    networks:
+      - keycloak-nw
+
+  guacamole:
+    image: guacamole/guacamole:latest
+    container_name: guacamole
+    volumes:
+      - ./guacamole-data:/etc/guacamole
+    environment:
+      - GUACD_HOSTNAME=guacamole-guacd
+      - GUACAMOLE_HOME=/etc/guacamole
+      - POSTGRES_HOSTNAME=guacamole-db
+      - POSTGRES_DATABASE=guacamole_db
+      - POSTGRES_USER=guacamole
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - OPENID_AUTHORIZATION_ENDPOINT=https://${KC_HOSTNAME}/realms/master/protocol/openid-connect/auth
+      - OPENID_JWKS_ENDPOINT=https://${KC_HOSTNAME}/realms/master/protocol/openid-connect/certs
+      - OPENID_ISSUER=https://${KC_HOSTNAME}/realms/master
+      - OPENID_CLIENT_ID=guacamole
+      - OPENID_REDIRECT_URI=https://${GUACAMOLE_HOSTNAME}/guacamole
+
+    # ports:
+    #   - 8080:8080
+    restart: unless-stopped
+    labels:
+      caddy: ${GUACAMOLE_HOSTNAME}
+      caddy.reverse_proxy: "{{upstreams 8080}}"
+      caddy.reverse_proxy.flush_interval: "-1"
+    networks:
+      - caddy
+      - guacamole-nw
+
+  guacamole-guacd:
+    image: guacamole/guacd:latest
+    container_name: guacamole-guacd
+    security_opt:
+      - label:disable
+    networks:
+      - guacamole-nw
+    restart: unless-stopped
+
+  guacamole-db:
+    image: postgres:13
+    container_name: guacamole-db
+    security_opt:
+      - label:disable
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=guacamole_db
+      - POSTGRES_USER=guacamole
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./guacamole-init:/docker-entrypoint-initdb.d # can be removed after initialization
+    networks:
+      - guacamole-nw
+
+
+networks:
+  keycloak-nw:
+  guacamole-nw:
+  caddy:
+    external: true
+
+volumes:
+  caddy_data: {}
+  keycloack-data: {}
+  postgres-data: {}
