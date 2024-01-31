@@ -9,7 +9,7 @@ variable "flavor_name" {
 }
 
 variable "ssh_key_name" {
-  default = "gridexx-latitude5420" 
+  default = "gridexx-latitude5420"
 }
 
 variable "security_groups" {
@@ -18,4 +18,14 @@ variable "security_groups" {
 
 variable "public_network_name" {
   default = "public2"
+}
+
+variable "keycloak_hostname" {
+  type        = string
+  description = "Keycloak hostname, e.g. keycloak.example.com"
+}
+
+variable "guacamole_hostname" {
+  type        = string
+  description = "Guacamole hostname, e.g. guacamole.example.com"
 }
