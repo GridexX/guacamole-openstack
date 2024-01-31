@@ -39,6 +39,7 @@ sudo ln -s /etc/guacamole/guacamole.war /var/lib/tomcat9/webapps/
 echo "✅ Links created"
 
 echo "✅ Folders created"
+export GUACAMOLE_HOME=/etc/guacamole
 sudo su -c "echo 'GUACAMOLE_HOME=/etc/guacamole' >> /etc/default/tomcat9"
 sudo su -c "printf 'guacd-hostname: 127.0.0.1\nguacd-port: 4822\nuser-mapping:   /etc/guacamole/user-mapping.xml\nauth-provider:  net.sourceforge.guacamole.net.basic.BasicFileAuthenticationProvider\n' >> /etc/guacamole/guacamole.properties"
 sudo ln -s /etc/guacamole /usr/share/tomcat9/.guacamole
@@ -49,3 +50,13 @@ curl -LO https://gist.githubusercontent.com/GridexX/ee38770e619a3b41bb0de132666b
 sudo mv /tmp/user-mapping.xml /etc/guacamole
 sudo systemctl restart tomcat9 guacd
 # TODO: Check how to retrieve user from the Edugain Federation
+
+# This section will be usefull for the SSO plugin with Edugain Federation
+# Install the SSO Plugin for Guacamole
+# curl -LO https://apache.org/dyn/closer.lua/guacamole/$GUACAMOLE_VERSION/binary/guacamole-auth-sso-$GUACAMOLE_VERSION.tar.gz?action=download
+# tar -xzf guacamole-auth-sso-$GUACAMOLE_VERSION.tar.gz
+# sudo mv guacamole-auth-sso-$GUACAMOLE_VERSION/saml/guacamole-auth-sso-saml-$GUACAMOLE_VERSION.jar $GUACAMOLE_HOME/extensions
+# # Configuring the plugin
+# sudo -c "printf 'saml-idp-metadata-url:\n' >> $GUACAMOLE_HOME/guacamole.properties"
+
+# Install

@@ -24,24 +24,25 @@ sudo apt-get update -y
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 sudo systemctl enable docker.service
 sudo systemctl enable containerd.service
-usermod -aG docker $USER
-newgrp docker
+sudo usermod -aG docker $USER
 
+echo "[#----] ✅ Docker installed"
 # --- Setup the project
 # Create a network for the containers
-docker network create caddy
+sudo docker network create caddy
 
 # Init the DB for guacamole
 mkdir -p ~/compose-guacamole-keycloak/guacamole-init
-docker run --rm guacamole/guacamole /opt/guacamole/bin/initdb.sh --postgresql > guacamole-init/initdb.sql
-
+sudo docker run --rm guacamole/guacamole /opt/guacamole/bin/initdb.sh --postgresql > ~/compose-guacamole-keycloak/guacamole-init/initdb.sql
+echo "[##---] ✅ DB initialized"
 # Install the SSO Plugin for Guacamole
 GUACAMOLE_VERSION="1.5.4"
 cd /tmp
 curl -LO https://apache.org/dyn/closer.lua/guacamole/$GUACAMOLE_VERSION/binary/guacamole-auth-sso-$GUACAMOLE_VERSION.tar.gz?action=download
 tar -xzf guacamole-auth-sso-$GUACAMOLE_VERSION.tar.gz
-mkdir ~/compose-guacamole-keycloak/guacamole-data/extensions/
-mv guacamole-auth-sso-$GUACAMOLE_VERSION/openid/guacamole-auth-sso-openid-$GUACAMOLE_VERSION.jar ~/compose-guacamole-keycloak/guacamole-data/extensions/extensions
+mkdir -p ~/compose-guacamole-keycloak/guacamole-data/extensions/
+mv guacamole-auth-sso-$GUACAMOLE_VERSION/openid/guacamole-auth-sso-openid-$GUACAMOLE_VERSION.jar ~/compose-guacamole-keycloak/guacamole-data/extensions/
+echo "[###--] ✅ Guacamole sso plugin installed"
 
 # Create random passwords
 # export GUACAMOLE_PASSWORD=$(openssl rand -base64 12)
@@ -50,10 +51,16 @@ export KC_DB_PASSWORD=$(openssl rand -hex 32)
 export KEYCLOAK_ADMIN_PASSWORD=$(openssl rand -hex 32)
 export POSTGRES_PASSWORD=$(openssl rand -hex 32) #Password used for the Guacamole DB
 # Write the password to a file so we can use it later
-echo "KC_DB_PASSWORD: $KC_DB_PASSWORD" > ~/.passwords
-echo "KEYCLOAK_ADMIN_PASSWORD: $KEYCLOAK_ADMIN_PASSWORD" >> ~/.passwords
-echo "POSTGRES_PASSWORD: $POSTGRES_PASSWORD" >> ~/.passwords
+echo "KC_DB_PASSWORD='$KC_DB_PASSWORD'" > ~/compose-guacamole-keycloak/.env
+echo "KEYCLOAK_ADMIN_PASSWORD: $KEYCLOAK_ADMIN_PASSWORD" >> ~/compose-guacamole-keycloak/.env
+echo "POSTGRES_PASSWORD: $POSTGRES_PASSWORD" >> ~/compose-guacamole-keycloak/.env
+echo " [####-] ✅ Passwords generated"
 
 # Download the Docker Compose file and start the containers
+cd /tmp
 curl -LO https://gist.githubusercontent.com/GridexX/8eabac30c4875e6ed36e37ab45798ddc/raw/0776a82caef2ca84c192f1e25725f43b0f40e430/docker-compose.yml
-docker compose up -d
+envsubst < docker-compose.yml > ~/compose-guacamole-keycloak/docker-compose.yml
+cd ~/compose-guacamole-keycloak
+sudo docker compose up -d
+echo "[#####] ✅ Containers started and running"
+exit 0
